@@ -83,14 +83,6 @@ int main() {
     PORTB &= ~(1<<PORTB2);
 
     while(1) {
-        if (pressed) {
-            if (timeReleased > 1200) {
-                sprintf(String,"Space: %u ms\n", timeReleased);
-                UART_putstring(String);
-            }
-            pressed = 0;
-        }
-
         if (released && timePressed > 30) {
             if (timePressed < 400) {
                 //led at PB1 to turn on when it is a dot
@@ -98,7 +90,7 @@ int main() {
                 _delay_ms(50);
                 PORTB &= ~(1<<PORTB1);
 
-                sprintf(String,"DOT\n");
+                sprintf(String,"DOT ");
                 UART_putstring(String);
             } else {
                 if (timePressed < 1200) {
@@ -107,16 +99,23 @@ int main() {
                     _delay_ms(50);
                     PORTB &= ~(1<<PORTB2);
 
-                    sprintf(String,"DASH\n");
+                    sprintf(String,"DASH ");
                     UART_putstring(String);
                 }
                 else {
-                    sprintf(String,"LONG PRESS\n");
+                    sprintf(String,"LONG PRESS ");
                     UART_putstring(String);
                 }
             }
             released = 0;
         }
+        if (pressed && timeReleased > 1200) {
+            sprintf(String,"] : ");
+            UART_putstring(String);
+            morseToAscii(Morse, len);
+            pressed  = 0;
+        }
+
     }
 
 }
@@ -127,14 +126,10 @@ ISR(TIMER1_CAPT_vect) {
         dif = (((edge1 / 125) * 2) + (overflow * over)) - ((edge2/ 125) * 2);
         timeReleased = dif;
 
-        if (timeReleased > 1200) {
-            morseToAscii(Morse, len);
-        }
-
         PORTB |= (1<<PORTB5);
         overflow = 0;
-        pressed = 1;
         expecting = 2;
+        pressed = 1;
         cli();
         //look for falling edge
         TCCR1B &= ~(1<<ICES1);
@@ -346,7 +341,7 @@ void morseToAscii(const int morse[], int length) {
         }
     }
 
-    sprintf(String,"\n\n");
+    sprintf(String,"\n\n[");
     UART_putstring(String);
     len = 0;
 }
